@@ -15,6 +15,7 @@ pub mod transaction_config;
 #[derive(Clone)]
 pub struct JupiterSwapApiClient {
     pub base_path: String,
+    pub api_key: String,
 }
 
 #[derive(Debug, Error)]
@@ -48,8 +49,8 @@ async fn check_status_code_and_deserialize<T: DeserializeOwned>(
 }
 
 impl JupiterSwapApiClient {
-    pub fn new(base_path: String) -> Self {
-        Self { base_path }
+    pub fn new(base_path: String, api_key: String) -> Self {
+        Self { base_path, api_key }
     }
 
     pub async fn quote(&self, quote_request: &QuoteRequest) -> Result<QuoteResponse, ClientError> {
@@ -58,6 +59,7 @@ impl JupiterSwapApiClient {
         let internal_quote_request = InternalQuoteRequest::from(quote_request.clone());
         let response = Client::new()
             .get(url)
+            .header("x-api-key", self.api_key.clone())
             .query(&internal_quote_request)
             .query(&extra_args)
             .send()
@@ -85,6 +87,7 @@ impl JupiterSwapApiClient {
     ) -> Result<SwapInstructionsResponse, ClientError> {
         let response = Client::new()
             .post(format!("{}/swap-instructions", self.base_path))
+            .header("x-api-key", self.api_key.clone())
             .json(swap_request)
             .send()
             .await?;
